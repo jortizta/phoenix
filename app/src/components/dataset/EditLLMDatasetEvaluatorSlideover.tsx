@@ -1,6 +1,5 @@
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { ModalOverlayProps } from "react-aria-components";
-import { FormProvider } from "react-hook-form";
 import {
   graphql,
   useFragment,
@@ -14,19 +13,21 @@ import type { EditLLMDatasetEvaluatorSlideover_evaluatorQuery } from "@phoenix/c
 import type { EditLLMDatasetEvaluatorSlideover_updateLLMEvaluatorMutation } from "@phoenix/components/dataset/__generated__/EditLLMDatasetEvaluatorSlideover_updateLLMEvaluatorMutation.graphql";
 import { Dialog } from "@phoenix/components/dialog";
 import { EditLLMEvaluatorDialogContent } from "@phoenix/components/evaluators/EditLLMEvaluatorDialogContent";
-import {
-  EvaluatorFormValues,
-  useEvaluatorForm,
-} from "@phoenix/components/evaluators/EvaluatorForm";
 import { EvaluatorPlaygroundProvider } from "@phoenix/components/evaluators/EvaluatorPlaygroundProvider";
 import { updateLLMEvaluatorPayload } from "@phoenix/components/evaluators/utils";
 import { Loading } from "@phoenix/components/loading";
 import { Modal, ModalOverlay } from "@phoenix/components/overlay/Modal";
+import { EvaluatorStoreProvider } from "@phoenix/contexts/EvaluatorContext";
 import { useNotifySuccess } from "@phoenix/contexts/NotificationContext";
 import {
   usePlaygroundContext,
   usePlaygroundStore,
 } from "@phoenix/contexts/PlaygroundContext";
+import {
+  DEFAULT_LLM_EVALUATOR_STORE_VALUES,
+  type EvaluatorStoreInstance,
+  type EvaluatorStoreProps,
+} from "@phoenix/store/evaluatorStore";
 import { Mutable } from "@phoenix/typeUtils";
 import { getErrorMessagesFromRelayMutationError } from "@phoenix/utils/errorUtils";
 
@@ -150,6 +151,7 @@ const EditEvaluatorDialog = ({
           evaluator {
             description
             kind
+            name
             ... on LLMEvaluator {
               prompt {
                 id
@@ -191,6 +193,9 @@ const EditEvaluatorDialog = ({
               ) {
               id
               displayName
+              evaluator {
+                name
+              }
               ...DatasetEvaluatorsTable_row
               ...EditLLMDatasetEvaluatorSlideover_evaluator
             }
@@ -198,13 +203,23 @@ const EditEvaluatorDialog = ({
         }
       `
     );
-  const defaultValues: EvaluatorFormValues = useMemo(() => {
+  const initialState = useMemo(() => {
     return {
+      ...DEFAULT_LLM_EVALUATOR_STORE_VALUES,
       evaluator: {
-        name: datasetEvaluator.displayName ?? "",
+        ...DEFAULT_LLM_EVALUATOR_STORE_VALUES.evaluator,
+        name: datasetEvaluator.evaluator.name ?? "",
+        displayName: datasetEvaluator.displayName ?? "",
         description: datasetEvaluator.evaluator.description ?? "",
         kind: datasetEvaluator.evaluator.kind,
         isBuiltin: false,
+        inputMapping: datasetEvaluator.inputMapping ?? {
+          literalMapping: {},
+          pathMapping: {},
+        },
+      },
+      datasetEvaluator: {
+        id: datasetEvaluatorId,
       },
       outputConfig: {
         name: datasetEvaluator.evaluator.outputConfig?.name ?? "",
@@ -224,70 +239,69 @@ const EditEvaluatorDialog = ({
       dataset: {
         readonly: true,
         id: datasetId,
-        assignEvaluatorToDataset: true,
+        selectedExampleId: null,
+        selectedSplitIds: [],
       },
-      inputMapping: datasetEvaluator.inputMapping ?? {
-        literalMapping: {},
-        pathMapping: {},
-      },
-    };
-  }, [datasetEvaluator, datasetId]);
-  const form = useEvaluatorForm(defaultValues);
-  const onSubmit = useCallback(() => {
-    const {
-      evaluator: { name, description },
-      dataset,
-      outputConfig,
-      inputMapping,
-    } = form.getValues();
-    invariant(dataset, "dataset is required");
-    invariant(outputConfig, "outputConfig is required");
-    const input = updateLLMEvaluatorPayload({
+    } satisfies EvaluatorStoreProps;
+  }, [datasetEvaluator, datasetId, datasetEvaluatorId]);
+  const onSubmit = useCallback(
+    (store: EvaluatorStoreInstance) => {
+      const {
+        evaluator: { displayName, description, inputMapping },
+        dataset,
+        outputConfig,
+      } = store.getState();
+      invariant(dataset, "dataset is required");
+      invariant(outputConfig, "outputConfig is required");
+      const input = updateLLMEvaluatorPayload({
+        playgroundStore,
+        instanceId,
+        displayName,
+        description,
+        outputConfig,
+        datasetId: dataset.id,
+        datasetEvaluatorId,
+        inputMapping,
+      });
+      updateLlmEvaluator({
+        variables: {
+          input,
+          connectionIds: updateConnectionIds ?? [],
+        },
+        onCompleted: () => {
+          onClose();
+          notifySuccess({
+            title: "Evaluator updated",
+          });
+        },
+        onError: (error) => {
+          const errorMessages = getErrorMessagesFromRelayMutationError(error);
+          setError(errorMessages?.join("\n") ?? undefined);
+        },
+      });
+    },
+    [
       playgroundStore,
       instanceId,
-      name,
-      description,
-      outputConfig,
-      datasetId: dataset.id,
       datasetEvaluatorId,
-      inputMapping,
-    });
-    updateLlmEvaluator({
-      variables: {
-        input,
-        connectionIds: updateConnectionIds ?? [],
-      },
-      onCompleted: () => {
-        onClose();
-        notifySuccess({
-          title: "Evaluator updated",
-        });
-      },
-      onError: (error) => {
-        const errorMessages = getErrorMessagesFromRelayMutationError(error);
-        setError(errorMessages?.join("\n") ?? undefined);
-      },
-    });
-  }, [
-    form,
-    playgroundStore,
-    instanceId,
-    datasetEvaluatorId,
-    updateLlmEvaluator,
-    updateConnectionIds,
-    onClose,
-    notifySuccess,
-  ]);
+      updateLlmEvaluator,
+      updateConnectionIds,
+      onClose,
+      notifySuccess,
+    ]
+  );
 
   return (
-    <FormProvider {...form}>
-      <EditLLMEvaluatorDialogContent
-        onClose={onClose}
-        onSubmit={onSubmit}
-        isSubmitting={isUpdating}
-        mode="update"
-        error={error}
-      />
-    </FormProvider>
+    <EvaluatorStoreProvider initialState={initialState}>
+      {({ store }) => (
+        <EditLLMEvaluatorDialogContent
+          onClose={onClose}
+          onSubmit={() => onSubmit(store)}
+          isSubmitting={isUpdating}
+          mode="update"
+          error={error}
+        />
+      )}
+    </EvaluatorStoreProvider>
   );
 };

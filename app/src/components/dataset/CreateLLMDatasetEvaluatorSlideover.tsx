@@ -1,26 +1,26 @@
 import { Suspense, useCallback, useMemo, useState } from "react";
 import { ModalOverlayProps } from "react-aria-components";
-import { FormProvider } from "react-hook-form";
 import { graphql, useMutation } from "react-relay";
 import invariant from "tiny-invariant";
 
 import type { CreateLLMDatasetEvaluatorSlideover_createLLMEvaluatorMutation } from "@phoenix/components/dataset/__generated__/CreateLLMDatasetEvaluatorSlideover_createLLMEvaluatorMutation.graphql";
 import { Dialog } from "@phoenix/components/dialog";
 import { EditLLMEvaluatorDialogContent } from "@phoenix/components/evaluators/EditLLMEvaluatorDialogContent";
-import {
-  DEFAULT_LLM_FORM_VALUES,
-  EvaluatorFormValues,
-  useEvaluatorForm,
-} from "@phoenix/components/evaluators/EvaluatorForm";
 import { EvaluatorPlaygroundProvider } from "@phoenix/components/evaluators/EvaluatorPlaygroundProvider";
 import { createLLMEvaluatorPayload } from "@phoenix/components/evaluators/utils";
 import { Loading } from "@phoenix/components/loading";
 import { Modal, ModalOverlay } from "@phoenix/components/overlay/Modal";
+import { EvaluatorStoreProvider } from "@phoenix/contexts/EvaluatorContext";
 import { useNotifySuccess } from "@phoenix/contexts/NotificationContext";
 import {
   usePlaygroundContext,
   usePlaygroundStore,
 } from "@phoenix/contexts/PlaygroundContext";
+import {
+  DEFAULT_LLM_EVALUATOR_STORE_VALUES,
+  type EvaluatorStoreInstance,
+  type EvaluatorStoreProps,
+} from "@phoenix/store/evaluatorStore";
 import { getErrorMessagesFromRelayMutationError } from "@phoenix/utils/errorUtils";
 
 export const CreateLLMDatasetEvaluatorSlideover = ({
@@ -90,69 +90,72 @@ const CreateEvaluatorDialog = ({
         }
       `
     );
-  const defaultValues: Partial<EvaluatorFormValues> = useMemo(() => {
+  const initialState = useMemo(() => {
     return {
-      ...DEFAULT_LLM_FORM_VALUES,
+      ...DEFAULT_LLM_EVALUATOR_STORE_VALUES,
       dataset: {
         readonly: true,
         id: datasetId,
-        assignEvaluatorToDataset: true,
+        selectedExampleId: null,
+        selectedSplitIds: [],
       },
-    };
+    } satisfies EvaluatorStoreProps;
   }, [datasetId]);
-  const form = useEvaluatorForm(defaultValues);
-  const onSubmit = useCallback(() => {
-    const {
-      evaluator: { name, description },
-      dataset,
-      outputConfig,
-      inputMapping,
-    } = form.getValues();
-    invariant(dataset, "dataset is required");
-    invariant(outputConfig, "outputConfig is required");
-    const input = createLLMEvaluatorPayload({
+  const onSubmit = useCallback(
+    (store: EvaluatorStoreInstance) => {
+      const {
+        evaluator: { name, description, inputMapping },
+        dataset,
+        outputConfig,
+      } = store.getState();
+      invariant(dataset, "dataset is required");
+      invariant(outputConfig, "outputConfig is required");
+      const input = createLLMEvaluatorPayload({
+        playgroundStore,
+        instanceId,
+        name,
+        description,
+        outputConfig,
+        datasetId: dataset.id,
+        inputMapping,
+      });
+      createLlmEvaluator({
+        variables: {
+          input,
+          connectionIds: updateConnectionIds ?? [],
+        },
+        onCompleted: () => {
+          onClose();
+          notifySuccess({
+            title: "Evaluator created",
+          });
+        },
+        onError: (error) => {
+          const errorMessages = getErrorMessagesFromRelayMutationError(error);
+          setError(errorMessages?.join("\n") ?? undefined);
+        },
+      });
+    },
+    [
       playgroundStore,
       instanceId,
-      name,
-      description,
-      outputConfig,
-      datasetId: dataset.id,
-      inputMapping,
-    });
-    createLlmEvaluator({
-      variables: {
-        input,
-        connectionIds: updateConnectionIds ?? [],
-      },
-      onCompleted: () => {
-        onClose();
-        notifySuccess({
-          title: "Evaluator created",
-        });
-      },
-      onError: (error) => {
-        const errorMessages = getErrorMessagesFromRelayMutationError(error);
-        setError(errorMessages?.join("\n") ?? undefined);
-      },
-    });
-  }, [
-    form,
-    playgroundStore,
-    instanceId,
-    createLlmEvaluator,
-    updateConnectionIds,
-    onClose,
-    notifySuccess,
-  ]);
+      createLlmEvaluator,
+      updateConnectionIds,
+      onClose,
+      notifySuccess,
+    ]
+  );
   return (
-    <FormProvider {...form}>
-      <EditLLMEvaluatorDialogContent
-        onClose={onClose}
-        onSubmit={onSubmit}
-        isSubmitting={isCreating}
-        mode="create"
-        error={error}
-      />
-    </FormProvider>
+    <EvaluatorStoreProvider initialState={initialState}>
+      {({ store }) => (
+        <EditLLMEvaluatorDialogContent
+          onClose={onClose}
+          onSubmit={() => onSubmit(store)}
+          isSubmitting={isCreating}
+          mode="create"
+          error={error}
+        />
+      )}
+    </EvaluatorStoreProvider>
   );
 };

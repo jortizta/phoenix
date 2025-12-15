@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<a9c0e1467882e54e179cd9ea24833e01>>
+ * @generated SignedSource<<96cafd70f16674904e4daa0024845215>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -534,7 +534,8 @@ return {
                         "kind": "ScalarField",
                         "name": "kind",
                         "storageKey": null
-                      }
+                      },
+                      (v5/*: any*/)
                     ],
                     "storageKey": null
                   },
@@ -585,12 +586,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "fa4e7208a5d72ee75733e3fb2bafc035",
+    "cacheID": "40e9ea9c2a46c1c9c7f25c95d013ed58",
     "id": null,
     "metadata": {},
     "name": "EditLLMDatasetEvaluatorSlideover_evaluatorQuery",
     "operationKind": "query",
-    "text": "query EditLLMDatasetEvaluatorSlideover_evaluatorQuery(\n  $datasetId: ID!\n  $datasetEvaluatorId: ID!\n) {\n  dataset: node(id: $datasetId) {\n    __typename\n    ... on Dataset {\n      datasetEvaluator(datasetEvaluatorId: $datasetEvaluatorId) {\n        evaluator {\n          __typename\n          ... on LLMEvaluator {\n            prompt {\n              id\n              name\n            }\n            promptVersion {\n              ...fetchPlaygroundPrompt_promptVersionToInstance_promptVersion\n              id\n            }\n            promptVersionTag {\n              name\n              id\n            }\n          }\n          id\n        }\n        ...EditLLMDatasetEvaluatorSlideover_evaluator\n        id\n      }\n    }\n    id\n  }\n}\n\nfragment EditLLMDatasetEvaluatorSlideover_evaluator on DatasetEvaluator {\n  id\n  displayName\n  inputMapping {\n    literalMapping\n    pathMapping\n  }\n  evaluator {\n    __typename\n    description\n    kind\n    ... on LLMEvaluator {\n      prompt {\n        id\n        name\n      }\n      promptVersion {\n        ...fetchPlaygroundPrompt_promptVersionToInstance_promptVersion\n        id\n      }\n      outputConfig {\n        name\n        optimizationDirection\n        values {\n          label\n          score\n        }\n        id\n      }\n    }\n    id\n  }\n}\n\nfragment fetchPlaygroundPrompt_promptVersionToInstance_promptVersion on PromptVersion {\n  id\n  modelName\n  modelProvider\n  invocationParameters\n  responseFormat {\n    definition\n  }\n  template {\n    __typename\n    ... on PromptChatTemplate {\n      messages {\n        role\n        content {\n          __typename\n          ... on TextContentPart {\n            text {\n              text\n            }\n          }\n          ... on ToolCallContentPart {\n            toolCall {\n              toolCallId\n              toolCall {\n                name\n                arguments\n              }\n            }\n          }\n          ... on ToolResultContentPart {\n            toolResult {\n              toolCallId\n              result\n            }\n          }\n        }\n      }\n    }\n    ... on PromptStringTemplate {\n      template\n    }\n  }\n  tools {\n    definition\n  }\n}\n"
+    "text": "query EditLLMDatasetEvaluatorSlideover_evaluatorQuery(\n  $datasetId: ID!\n  $datasetEvaluatorId: ID!\n) {\n  dataset: node(id: $datasetId) {\n    __typename\n    ... on Dataset {\n      datasetEvaluator(datasetEvaluatorId: $datasetEvaluatorId) {\n        evaluator {\n          __typename\n          ... on LLMEvaluator {\n            prompt {\n              id\n              name\n            }\n            promptVersion {\n              ...fetchPlaygroundPrompt_promptVersionToInstance_promptVersion\n              id\n            }\n            promptVersionTag {\n              name\n              id\n            }\n          }\n          id\n        }\n        ...EditLLMDatasetEvaluatorSlideover_evaluator\n        id\n      }\n    }\n    id\n  }\n}\n\nfragment EditLLMDatasetEvaluatorSlideover_evaluator on DatasetEvaluator {\n  id\n  displayName\n  inputMapping {\n    literalMapping\n    pathMapping\n  }\n  evaluator {\n    __typename\n    description\n    kind\n    name\n    ... on LLMEvaluator {\n      prompt {\n        id\n        name\n      }\n      promptVersion {\n        ...fetchPlaygroundPrompt_promptVersionToInstance_promptVersion\n        id\n      }\n      outputConfig {\n        name\n        optimizationDirection\n        values {\n          label\n          score\n        }\n        id\n      }\n    }\n    id\n  }\n}\n\nfragment fetchPlaygroundPrompt_promptVersionToInstance_promptVersion on PromptVersion {\n  id\n  modelName\n  modelProvider\n  invocationParameters\n  responseFormat {\n    definition\n  }\n  template {\n    __typename\n    ... on PromptChatTemplate {\n      messages {\n        role\n        content {\n          __typename\n          ... on TextContentPart {\n            text {\n              text\n            }\n          }\n          ... on ToolCallContentPart {\n            toolCall {\n              toolCallId\n              toolCall {\n                name\n                arguments\n              }\n            }\n          }\n          ... on ToolResultContentPart {\n            toolResult {\n              toolCallId\n              result\n            }\n          }\n        }\n      }\n    }\n    ... on PromptStringTemplate {\n      template\n    }\n  }\n  tools {\n    definition\n  }\n}\n"
   }
 };
 })();

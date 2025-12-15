@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<f5d2eed5b964982e538e560e5b2a5cfc>>
+ * @generated SignedSource<<e502e3cc4f9efd2f1d51b92e49f6ab43>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -17,6 +17,7 @@ export type EditLLMDatasetEvaluatorSlideover_evaluator$data = {
   readonly evaluator: {
     readonly description: string | null;
     readonly kind: EvaluatorKind;
+    readonly name: string;
     readonly outputConfig?: {
       readonly name: string;
       readonly optimizationDirection: OptimizationDirection;
@@ -144,6 +145,7 @@ return {
           "name": "kind",
           "storageKey": null
         },
+        (v1/*: any*/),
         {
           "kind": "InlineFragment",
           "selections": [
@@ -430,6 +432,6 @@ return {
 };
 })();
 
-(node as any).hash = "bc3622f72020702141dcd12664b1ade5";
+(node as any).hash = "442a5ee7ff3aee92413265d5fdce4f1b";
 
 export default node;
