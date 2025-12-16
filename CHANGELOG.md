@@ -1,5 +1,12 @@
 # Changelog
 
+## [12.26.0](https://github.com/Arize-ai/phoenix/compare/arize-phoenix-v12.25.1...arize-phoenix-v12.26.0) (2025-12-16)
+
+
+### Features
+
+* move add dataset example to be a part of the examples tab ([#10643](https://github.com/Arize-ai/phoenix/issues/10643)) ([f1c3711](https://github.com/Arize-ai/phoenix/commit/f1c3711f83308353accdca70f0daad081c80bfa8))
+
 ## [12.25.1](https://github.com/Arize-ai/phoenix/compare/arize-phoenix-v12.25.0...arize-phoenix-v12.25.1) (2025-12-16)
 
 
